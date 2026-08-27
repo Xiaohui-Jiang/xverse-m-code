@@ -22,7 +22,6 @@ The paper describes four architectural innovations:
 
 - Direct transcriptomic modeling instead of imposing an artificial sequential structure.
 - Panel-aware stochastic gene masking for varying gene panels.
-- Gradient Reversal Layer training to separate biological variation from technical confounders.
 - Distribution reconstruction loss for cell- and gene-specific expression distributions.
 
 The paper organizes the resulting capabilities into three domains: universal representation, cell profile synthesis, and biological discovery.
