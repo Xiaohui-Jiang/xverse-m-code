@@ -1,41 +1,41 @@
-# xVERSE 上一版本：代码技术记录
+# Previous xVERSE Version: Technical Summary
 
-本文件只记录 `/Users/xiaohui/LocalFiles/Codes/xverse-code` 中实际存在的代码设计，不补充论文中的未实现描述。
+This document records only the technical designs that are present in the codebase at `/Users/xiaohui/LocalFiles/Codes/xverse-code`.
 
-## 1. 模型结构
+## 1. Model Architecture
 
-核心模型是 `main/utils_model.py` 中的 `XVerseModel`：
+The core model is `XVerseModel` in `main/utils_model.py`:
 
-- 输入是固定全局 gene universe 中的 dense count matrix，以及每个 cell 的 `observed_mask`。
-- `FiLMMaskEncoder` 分别编码 `log1p(counts)` 和 observed-gene mask。
-- mask encoder 产生 FiLM 的 gamma/beta，调制 expression representation。
-- encoder 输出 `z_bio_raw`，再根据配置决定是否进行 L2 normalization，得到公开的 `z_bio`。
-- `DenseExpressionDecoder` 将 `z_bio` 解码为 gene logits；`library_head` 预测 library size；softmax 后得到非负的 `mu_bio`。
-- 如果模型启用 sample embedding，decoder 可进一步生成 sample-conditioned 的 `mu`。
+- The input is a dense count matrix in a fixed global gene universe, together with an `observed_mask` for each cell.
+- `FiLMMaskEncoder` separately encodes `log1p(counts)` and the observed-gene mask.
+- The mask encoder produces FiLM gamma and beta values that modulate the expression representation.
+- The encoder outputs `z_bio_raw`; optional L2 normalization produces the public `z_bio`.
+- `DenseExpressionDecoder` maps `z_bio` to gene logits. `library_head` predicts library size, and a softmax produces the nonnegative `mu_bio`.
+- When sample embeddings are enabled, the decoder can additionally produce a sample-conditioned `mu`.
 
-## 2. 观测 mask 与随机 mask
+## 2. Observed and Random Masks
 
-`FiLMMaskEncoder._apply_random_mask()` 在训练时对已观测基因随机隐藏：
+`FiLMMaskEncoder._apply_random_mask()` randomly hides already observed genes during training:
 
-- 观测基因较少时，随机隐藏一部分基因，至少保留一个观测基因。
-- 观测基因较多时，按不同概率随机隐藏 0--70% 的基因。
-- 对足够大的 panel，部分情况下与预配置 panel mask 相交，用于模拟空间 panel。
+- For cells with few observed genes, it hides a subset while retaining at least one observed gene.
+- For cells with many observed genes, it hides a stochastic fraction ranging from 0 to 70 percent.
+- For sufficiently large panels, some views intersect the observed genes with a configured panel mask to simulate spatial panels.
 
-模型输入中的 `observed_mask` 与 encoder 使用的随机 mask 是两个概念：前者决定哪些基因可以进入 likelihood，后者决定本次 view 的 encoder 输入。
+The input `observed_mask` and the encoder's random mask have different roles: the former determines which genes contribute to the likelihood, while the latter determines which genes are visible in a particular encoder view.
 
-## 3. 计数似然
+## 3. Count Likelihoods
 
-代码实现了三类 reconstruction loss：
+The code implements three reconstruction losses:
 
-- Poisson negative log-likelihood。
-- Negative Binomial negative log-likelihood。
-- Zero-Inflated Negative Binomial negative log-likelihood。
+- Poisson negative log-likelihood.
+- Negative Binomial negative log-likelihood.
+- Zero-Inflated Negative Binomial negative log-likelihood.
 
-NB dispersion 支持 `global`、`gene`、`cell`、`factorized`、`cell_gene` 和 `lowrank` 六种 parameterization。数值计算在 fp32 中进行，并对 `mu`、dispersion 和 count 做有限值处理与边界裁剪。
+NB dispersion supports six parameterizations: `global`, `gene`, `cell`, `factorized`, `cell_gene`, and `lowrank`. Numerical likelihood calculations run in fp32, with finite-value handling and bounds applied to counts, means, and dispersion values.
 
-## 4. 辅助目标与训练流程
+## 4. Auxiliary Objectives and Training
 
-`pretrain_one_epoch()` 对每个 batch 做两次独立 forward，形成两个随机 mask view。训练目标是：
+`pretrain_one_epoch()` performs two independent forward passes for each batch, creating two random-mask views. The training objective is:
 
 $$
 \mathcal{L} =
@@ -45,53 +45,53 @@ $$
 + \lambda_{contrast}\mathcal{L}_{contrast}.
 $$
 
-- `mu` 和 `mu_bio` 都只在 observed genes 上计算重构损失。
-- cell type 使用带 label smoothing 的 cross-entropy；无标签 cell 被忽略。
-- 两个 view 的 projection 使用双向 InfoNCE 对比损失。
-- 优化器是 Adam，使用 AMP、gradient clipping 和 `ReduceLROnPlateau`。
-- checkpoint 主要依据 validation `loss_nb_bio` 选择。
+- Reconstruction losses for `mu` and `mu_bio` are computed only on observed genes.
+- Cell types use cross-entropy with label smoothing; cells without labels are ignored.
+- The projections from the two views use a bidirectional InfoNCE contrastive loss.
+- Optimization uses Adam, AMP, gradient clipping, and `ReduceLROnPlateau`.
+- Checkpoints are primarily selected using validation `loss_nb_bio`.
 
-代码支持将 cell-type label 替换为预计算文本 embedding 的 cosine-style matching，这属于辅助预测头。
+The code can replace cell-type classification with cosine-style matching to precomputed text embeddings through an auxiliary prediction head.
 
-## 5. 数据加载
+## 5. Data Loading
 
-`main/data.py` 有两套数据路径：
+`main/data.py` provides two data paths.
 
-### 旧式 NPZ block
+### Legacy NPZ Blocks
 
-`FastXVerseBatchDataset` 延迟加载稀疏 CSR block，通过局部 gene list 映射到全局 gene order，并用 LRU cache 控制内存。`SparseBatchCollator` 将稀疏 row 组织成 batch payload。
+`FastXVerseBatchDataset` lazily loads sparse CSR blocks, maps local gene lists to the global gene order, and uses an LRU cache to control memory. `SparseBatchCollator` converts sparse rows into a batch payload.
 
-### compiled `xverse_train_v1`
+### Compiled `xverse_train_v1`
 
-`CompiledShardDataset` 使用 memory-mapped shard 和 manifest。它保存 global cell range、sample ID、cell type ID 及稀疏 gene/value arrays。若 manifest 中的 `source_pair_id` 和 source metadata 可访问，loader 会恢复完整 measured panel，从而把“测量为零”和“未测量”区分开；否则只能用非零 gene index 作为 fallback，并打印警告。
+`CompiledShardDataset` uses memory-mapped shards and a manifest. It stores global cell ranges, sample IDs, cell-type IDs, and sparse gene/value arrays. When `source_pair_id` and source metadata are available, the loader recovers the complete measured panel and distinguishes measured zeros from unmeasured genes. Otherwise, it falls back to nonzero gene indices and prints a warning.
 
-## 6. 采样策略
+## 6. Sampling Strategy
 
-`BalancedSampleSampler` 和 `CompiledBalancedSampler` 按 sample ID 平衡抽样，并支持：
+`BalancedSampleSampler` and `CompiledBalancedSampler` sample by sample ID and support:
 
-- 每个 sample 的固定抽样数量。
-- 可复现的 sample 内排序。
-- 固定训练步数下的数据 fraction ablation。
-- shard locality、active shard 和 reorder window。
+- A fixed number of sampled cells per sample.
+- Reproducible ordering within each sample.
+- Training-data-fraction ablations with a fixed number of training steps.
+- Shard locality, active-shard limits, and reorder windows.
 
-这个设计使训练数据量实验改变 cell diversity，同时尽量保持 optimizer steps 和 validation split 不变。
+This design changes cell diversity in data-volume experiments while keeping optimizer steps and the validation split as consistent as possible.
 
-## 7. 推理与 fine-tuning
+## 7. Inference and Fine-tuning
 
-`main/cli_xverse.py` 提供 embedding 和 generation 两类任务：
+`main/cli_xverse.py` provides embedding and generation tasks:
 
-- embedding 将 `z_bio` 写入 `adata.obsm["xVerse"]`。
-- generation 将 `mu_bio` 及 NB samples 写入新的 `.h5ad` 文件。
+- Embedding writes `z_bio` to `adata.obsm["xVerse"]`.
+- Generation writes `mu_bio` and NB samples to a new `.h5ad` file.
 
-`XVerseFineTuneModel` 复用 base model 的 encoder、decoder、library head 和 dispersion，并可以增加 `sample_emb_ft`。它输出 `mu_bio`，在 sample ID 有效时额外输出 sample-conditioned `mu`。fine-tuning loop 使用 reconstruction、contrastive loss、validation split、scheduler 和 early stopping。
+`XVerseFineTuneModel` reuses the base model's encoder, decoder, library head, and dispersion, and can add `sample_emb_ft`. It outputs `mu_bio` and, when the sample ID is valid, an additional sample-conditioned `mu`. The fine-tuning loop uses reconstruction and contrastive losses, a validation split, a scheduler, and early stopping.
 
-代码中虽然定义了 `freeze_base_model()`，但 CLI 的 fine-tuning loop 没有自动调用它；因此默认会更新复用的 base encoder/decoder 参数以及 sample embedding（若启用）。
+The class defines `freeze_base_model()`, but the CLI fine-tuning loop does not call it automatically. By default, the reused base encoder and decoder parameters can therefore be updated together with the sample embedding when sample-specific fine-tuning is enabled.
 
-## 8. 代码层面的技术精神
+## 8. Technical Principles Encoded in the Code
 
-1. 用显式 observed mask 处理不同 gene panel，而不是把缺失 panel 当作真实零值。
-2. 用随机 mask 的两个 view 学习 panel-robust representation。
-3. 用 `z_bio` 生成 biological mean，用 sample embedding 表达 sample-specific variation。
-4. 用 count likelihood 而非普通 MSE 约束表达生成。
-5. 通过稀疏加载、memory mapping 和 sample-balanced sampling 支撑大规模训练。
-6. 让同一模型同时服务 embedding、imputation、virtual cell generation 和 downstream augmentation。
+1. Use an explicit observed mask for different gene panels instead of treating panel absence as a true zero.
+2. Use two randomly masked views to learn panel-robust representations.
+3. Use `z_bio` to generate a biological mean and sample embeddings to express sample-specific variation.
+4. Use count likelihoods rather than ordinary MSE to constrain expression generation.
+5. Use sparse loading, memory mapping, and sample-balanced sampling to support large-scale training.
+6. Let one model serve embedding, imputation, virtual-cell generation, and downstream augmentation.

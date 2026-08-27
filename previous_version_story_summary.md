@@ -1,90 +1,90 @@
-# xVERSE 上一版本：文章故事记录
+# Previous xVERSE Version: Story Summary
 
-本文件只记录 `xVERSE_manu/manu/V1/main/main.tex` 及其 `sections/introduction.tex`、`results.tex`、`discussion.tex`、`methods.tex` 中的论文叙事，不对代码实现做判断。
+This document records only the narrative presented in `xVERSE_manu/manu/V1/main/main.tex` and its `introduction.tex`, `results.tex`, `discussion.tex`, and `methods.tex` sections.
 
-## 1. 核心主张
+## 1. Central Claim
 
-文章把 xVERSE 定义为一个 transcriptomics-native foundation model：它不仅学习 universal cell and gene representations，还直接学习整个 transcriptome 的表达分布，因此能够生成 virtual cells，并把生成能力用于 imputation、small-data analysis 和 cross-modality prediction。
+The paper presents xVERSE as a transcriptomics-native foundation model that learns universal cell and gene representations while directly learning the expression distribution of the transcriptome. This allows it to generate virtual cells and apply that generative capability to imputation, small-data analysis, and cross-modality prediction.
 
-## 2. 问题起点
+## 2. Starting Problem
 
-文章首先建立三重限制：
+The paper establishes three related limitations:
 
-1. 现有 single-cell foundation models 多借用 BERT/GPT 等语言模型，把转录组转换成 token 序列，可能忽视基因表达的无序性、高维性、稀疏性和计数分布。
-2. 许多模型主要解决 representation learning，并不真正建模完整 transcriptomic probability distribution，因此难以生成高保真的 virtual cell。
-3. targeted spatial panels、稀有细胞和小规模临床样本都受到实验成本与观测能力限制，真实生物信号可能无法被充分测量或统计确认。
+1. Many single-cell foundation models adapt BERT- or GPT-like language models and represent transcriptomes as token sequences, potentially overlooking the unordered, high-dimensional, sparse, and count-based nature of gene expression.
+2. Many models primarily address representation learning rather than modeling the full transcriptomic probability distribution, making high-fidelity virtual-cell synthesis difficult.
+3. Targeted spatial panels, rare cell populations, and small clinical datasets are constrained by experimental cost and measurement capacity, so important biological signals may not be sufficiently observed or statistically confirmed.
 
-文章据此提出：foundation model 不应只帮助研究者表示已有数据，也应帮助研究者扩展可观测和可分析的生物数据空间。
+The paper therefore argues that a foundation model should not only represent existing data, but also expand the biological data space that researchers can observe and analyze.
 
-## 3. 文章提出的解决方向
+## 3. Proposed Direction
 
-文章将 xVERSE 的设计概括为四个创新点：
+The paper describes four architectural innovations:
 
-- 直接面向 transcriptomic data 建模，而不是强加人工 sequential structure。
-- 用 panel-aware stochastic gene masking 适应不同 gene panels。
-- 用 GRL 将 biological variation 与 technical confounders 分开。
-- 用 distribution reconstruction loss 建模 cell- and gene-specific expression distributions。
+- Direct transcriptomic modeling instead of imposing an artificial sequential structure.
+- Panel-aware stochastic gene masking for varying gene panels.
+- Gradient Reversal Layer training to separate biological variation from technical confounders.
+- Distribution reconstruction loss for cell- and gene-specific expression distributions.
 
-论文将最终能力归纳为三个领域：universal representation、cell profile synthesis 和 biological discovery。
+The paper organizes the resulting capabilities into three domains: universal representation, cell profile synthesis, and biological discovery.
 
-## 4. Results 的叙事顺序
+## 4. Results Narrative
 
-### 第一部分：Universal representation
+### Part I: Universal Representation
 
-文章先在独立的 human pediatric liver 和 ALS motor cortex 数据上进行 zero-shot benchmark，比较 xVERSE、scGPT、Nicheformer、Geneformer 和 Harmony。重点展示：
+The paper first evaluates zero-shot representations on independent human pediatric liver and ALS motor cortex datasets, comparing xVERSE with scGPT, Nicheformer, Geneformer, and Harmony. It emphasizes:
 
-- 保留 cell-type heterogeneity。
-- 减少 batch effect。
-- 在 whole transcriptome、Xenium Prime panel 和 tissue-specific panel 下保持表现。
-- 同时具备较高 inference efficiency。
+- Preservation of cell-type heterogeneity.
+- Reduction of batch effects.
+- Consistent performance across whole-transcriptome, Xenium Prime, and tissue-specific panels.
+- High inference efficiency.
 
-这一部分要证明 xVERSE 学到的是可迁移的 biological representation，而非某个训练数据集的特征。
+This section is intended to show that xVERSE learns transferable biological representations rather than features tied to one training dataset.
 
-### 第二部分：Gene2Cell interpretability
+### Part II: Gene2Cell Interpretability
 
-文章随后引入 Gene2Cell score，将模型的细胞表示解释为基因对 cellular identity 的贡献。高分基因被用于：
+The paper then introduces the Gene2Cell score, interpreting cell representations through the contribution of individual genes to cellular identity. High-scoring genes are used to:
 
-- 检验哪些基因最能保留 cell-type heterogeneity。
-- 指导 spatial transcriptomics 的 gene-panel design。
-- 在减少测量基因数量的同时尽量保留表示与插补能力。
+- Test which genes preserve cell-type heterogeneity.
+- Guide spatial transcriptomics gene-panel design.
+- Retain representation and imputation performance with fewer measured genes.
 
-这一部分把 foundation model 从黑箱 representation 工具推进到可用于 gene prioritization 的工具。
+This section moves the foundation model from a black-box representation tool toward a tool for gene prioritization.
 
-### 第三部分：Virtual cell synthesis
+### Part III: Virtual Cell Synthesis
 
-文章接着证明 xVERSE 能生成高保真的 virtual cells。证据包括：
+The paper next demonstrates high-fidelity virtual-cell generation. The evidence includes:
 
-- 重现真实细胞的 UMI count distributions。
-- 保留 HVG expression rankings。
-- 在联合 UMAP 中与 biological cells 融合，同时维持 cell-type clusters。
-- biological-versus-virtual classifier 的 AUROC 接近 0.5。
+- Reproduction of real-cell UMI count distributions.
+- Preservation of highly variable gene expression rankings.
+- Integration with biological cells in joint UMAPs while maintaining cell-type clusters.
+- Biological-versus-virtual classifiers with AUROC near 0.5.
 
-这里的叙事重点是“indistinguishable from biological data”，而不只是“生成结果看起来相似”。
+The narrative emphasis is that virtual cells are not merely visually similar; they are difficult to distinguish from biological data in a statistical classification test.
 
-### 第四部分：Spatial imputation
+### Part IV: Spatial Imputation
 
-文章把 targeted spatial panel 描述为一个硬件和实验效率造成的观测瓶颈。xVERSE 的 whole-transcriptome prior 被用于从 partial panel 推断 unmeasured genes，并与 SpaGE、gimVI 比较。
+The paper frames targeted spatial panels as an observation bottleneck caused by hardware and experimental efficiency constraints. xVERSE uses a whole-transcriptome prior to infer unmeasured genes from partial panels and is compared with SpaGE and gimVI.
 
-叙事强调两点：xVERSE 可以 zero-shot 工作，并且不依赖 external single-cell reference；同时在不同 reference 条件变化时比专门方法更稳定。
+The narrative highlights that xVERSE can work in a zero-shot setting without an external single-cell reference, and that its performance is more stable across reference conditions than the specialized methods.
 
-### 第五部分：Small-data biological discovery
+### Part V: Small-Data Biological Discovery
 
-文章把 virtual cell synthesis 从生成任务推进到 biological analysis：
+The paper moves virtual-cell synthesis into biological analysis:
 
-- 在 minor population 只有 4--10 个细胞时，增强数据帮助 Leiden 找到 rare cell types。
-- 在极小样本 DEG 分析中，xVERSE augmentation 比简单复制细胞更接近 full-data ground truth。
+- Data augmentation helps Leiden identify rare cell types when a minor population contains only 4--10 cells.
+- In extremely small-sample DEG analysis, xVERSE augmentation performs better than simply copying cells and more closely approaches the full-data ground truth.
 
-这里的中心概念是：virtual cells 能放大已经存在但统计功效不足的 biological signal。
+The central concept is that virtual cells amplify biological signals that are present but statistically underpowered.
 
-### 第六部分：Cross-modality generalization
+### Part VI: Cross-Modality Generalization
 
-最后，文章使用 heart-transplant CITE-seq/VDJ-seq 数据，训练集只包含 normal controls，测试集包含 NGD 和 CAV pathological states。xVERSE virtual cells 被用于增强 ADT prediction、B-cell heavy-chain isotype classification 和 T-cell lineage prediction。
+Finally, the paper uses heart-transplant CITE-seq/VDJ-seq data. Models are trained on normal controls and tested on NGD and CAV pathological states. xVERSE-generated virtual cells augment prediction of ADT levels, B-cell heavy-chain isotypes, and T-cell lineages.
 
-这一部分把模型价值提升到 out-of-distribution generalization：合成数据帮助下游模型面对训练期间未见过的 pathological state。
+This section elevates the model's value to out-of-distribution generalization: synthetic data help downstream models handle pathological states that were not present during training.
 
-## 5. 文章的完整证据链
+## 5. Complete Evidence Chain
 
-文章的逻辑推进是：
+The paper's progression is:
 
 $$
 \text{universal representation}
@@ -94,27 +94,41 @@ $$
 \rightarrow \text{biological discovery and OOD generalization}.
 $$
 
-大规模跨组织数据提供 universal prior 的基础；zero-shot benchmark 证明 representation 泛化；Gene2Cell 提供可解释性；virtual-cell fidelity 实验验证生成质量；imputation、rare-cell、DEG 和 cross-modality 实验说明生成结果能解决实际生物学问题。
+Large cross-tissue data establish the basis for a universal prior; zero-shot benchmarks test representation transfer; Gene2Cell provides interpretability; virtual-cell fidelity experiments test generation quality; and imputation, rare-cell, DEG, and cross-modality experiments show that generated data can address practical biological problems.
 
-## 6. 文章中的核心对比
+The story is therefore not simply that strong benchmark scores imply usefulness. It is:
 
-文章通过几组对比建立必要性：
+> Learn a universal biological representation, learn the full expression distribution, generate credible cells, extend missing or scarce observations, and improve biological discovery and cross-state generalization.
 
-- language-model adaptation 对比 transcriptomics-native modeling；
-- foundation model 的普适性对比 specialized method 的任务精度；
-- biological cells 对比 computationally synthesized virtual cells；
-- external-reference-dependent imputation 对比 internalized universal prior；
-- 实验数据稀缺对比计算生成带来的数据扩展。
+## 6. Roles in the Paper's Narrative
 
-这些对比共同服务于文章的中心叙事：xVERSE 不只是提高已有分析的性能，而是在计算层面扩展实验和生物发现的边界。
+- `z_bio` represents a biological space shared across experimental conditions.
+- `mu_bio` represents the underlying biological expression profile after removing technical factors.
+- The sample-conditioned output represents a generative profile that retains the technical characteristics of the target data.
+- Gene2Cell scores connect the internal model to an interpretation of biological identity.
+- Virtual cells connect the foundation model to downstream machine learning and biological discovery.
 
-## 7. Discussion 中的最终定位
+This role assignment allows the paper to cover representation learning, generative modeling, spatial imputation, small-data analysis, and OOD generalization while maintaining one central narrative.
 
-文章最终将 xVERSE 定位为：
+## 7. Key Contrasts
 
-- 可以跨任务服务 single-cell machine learning 的通用生成引擎；
-- 可以通过 virtual cells 缓解 rare population 和 low-n study 的统计限制；
-- 可以帮助 targeted spatial technology 获得更广的 transcriptomic insight；
-- 可以为未来整合 chromatin accessibility 和 protein abundance 的多组学 latent space 提供基础。
+The paper builds its case through several contrasts:
 
-文章同时承认其适用边界：模型主要面向 UMI-based single-cell 和 imaging-based spatial count distributions，对 Smart-seq 等非 UMI protocol 的适应性有限。
+- Language-model adaptation versus transcriptomics-native modeling.
+- Foundation-model universality versus specialized-method task precision.
+- Experimentally observed biological cells versus computationally synthesized virtual cells.
+- External-reference-dependent imputation versus an internalized universal prior.
+- Experimental data scarcity versus computational expansion of the data space.
+
+Together, these contrasts support the paper's central narrative: xVERSE does not merely improve existing analyses; it expands the boundary of experimentation and biological discovery computationally.
+
+## 8. Final Positioning in the Discussion
+
+The paper positions xVERSE as:
+
+- A general generative engine that can support many single-cell machine-learning tasks.
+- A way to mitigate the statistical limitations of rare populations and low-n studies through virtual cells.
+- A means of extracting broader transcriptomic insight from targeted spatial technologies.
+- A foundation for future latent spaces that integrate chromatin accessibility and protein abundance.
+
+The paper also states a limitation: the model is designed primarily for UMI-based single-cell and imaging-based spatial count distributions, and its adaptability to non-UMI protocols such as Smart-seq remains limited.
