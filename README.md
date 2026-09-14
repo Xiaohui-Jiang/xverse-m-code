@@ -5,6 +5,7 @@ encoder/decoder. See [the implementation guide](latent_diffusion/README.md) for
 data loading, training, generation, and the bounded DCC pilot.
 
 - [Repository instructions](AGENTS.md)
+- [Science Perturb-multiome download and data paths](data_preparation/README.md)
 - [Brief summary of the earlier xVERSE work](xverse/xverse_technical_summary.md)
 
 Local repository: `/Users/xiaohui/LocalFiles/Codes/xverse-m-code`.
