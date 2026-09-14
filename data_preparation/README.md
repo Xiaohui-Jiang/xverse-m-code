@@ -27,7 +27,7 @@ an external `--data-root`, and per-dataset raw/processed/QC locations.
 /hpc/group/xielab/xj58/xverse-m-data/
   perturb_multiome_gse274113/
     metadata/                  # Official HTML listing, filelist and family SOFT
-    raw/series/                # H5 matrices, annotated CSV and fragment XLSX
+    raw/series/                # H5 matrices, annotated CSV and fragment inventory XLSX
     raw/samples/               # ATAC fragments, indexes and peak annotations
     processed/                 # Reserved for future format conversion
     qc/                        # Reserved for future QC
@@ -37,7 +37,7 @@ an external `--data-root`, and per-dataset raw/processed/QC locations.
 ```
 
 As of 2026-09-14, GEO exposes 28 H5 matrices, one annotated metadata CSV,
-one fragment-link spreadsheet and 42 sample files (14 fragment files with
+one fragment inventory spreadsheet and 42 sample files (14 fragment files with
 indexes and peak annotations). The two H5 filename families are preserved;
 their modalities must be determined from HDF5 features and sample metadata,
 not inferred from the filename. Sample labels such as `rep1` must not be
@@ -76,8 +76,8 @@ These counts describe the deposited annotation, not a new QC selection.
 GEO's approximately 45.4 GB `GSE274113_RAW.tar` contains the 42 sample files.
 The script downloads those members directly from their official GSM URLs,
 avoiding duplicate TAR storage and extraction. The spreadsheet is retained
-as provenance; its external links are unnecessary because fragments are now
-available directly from GEO. Exact totals are recorded in the download plan.
+as provenance and contains GSM accessions and placeholder filenames. The
+actual fragments are available directly from GEO. Exact totals are in the plan.
 The 2026-09-14 plan contains 72 data files totaling 49,422,011,482 bytes
 (49.42 GB decimal), excluding the small provenance snapshots and receipts.
 
@@ -134,3 +134,26 @@ metadata on the first run and reuses the plan on subsequent runs. Use
 Monitor Slurm output in `/hpc/group/xielab/xj58/sbatch_output/xvm_science_data_JOBID.out`
 and `.err`; check `download_manifest.json` for verified-file progress.
 Pretraining overlap for xVERSE and EpiAgent has not been audited by this download.
+
+## Upstream integrity issue discovered on 2026-09-14
+
+`GSM8443612_rep2_atac_fragments.tsv.gz` has the exact GEO-advertised length
+(3,052,699,648 bytes), but full gzip validation fails with an unexpected EOF.
+An independent HTTP Range request reproduced the identical last 128 KiB.
+The last BGZF block declares 14,165 bytes but only 1,663 remain in the file.
+This indicates truncation in the currently served source, not simply a short
+local transfer. The downloader deliberately retains this as `.part` and
+reports failure rather than treating it as usable. Existing rep2 H5 matrices
+are separate assets and are not invalidated by this fragment-file defect.
+
+Reproduce the tail diagnostic (JSON is saved under `metadata/`):
+
+```bash
+python data_preparation/01_check_fragment_tail.py
+```
+
+Do not repair this by appending a gzip footer, silently discarding the final
+block, or using the truncated data as a complete sample. A corrected source
+or reprocessing of the corresponding raw sequencing reads would be required
+for a fully validated rep2 fragment input. Other files continue downloading
+even when one file fails.
