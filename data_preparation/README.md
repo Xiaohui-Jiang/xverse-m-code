@@ -43,11 +43,43 @@ their modalities must be determined from HDF5 features and sample metadata,
 not inferred from the filename. Sample labels such as `rep1` must not be
 assumed to identify independent donors.
 
+Inspection of the downloaded rep1 files confirms:
+
+- `GSE274113_filtered_feature_bc_matrix_1.h5`: `Gene Expression` and
+  `CRISPR Guide Capture`, 36,664 features by 14,525 barcodes.
+- `GSE274113_rep1_filtered_feature_bc_matrix.h5`: `Gene Expression` and
+  `Peaks`, 194,891 features by 13,168 barcodes.
+
+Do not concatenate these files as independent cells or assume identical
+barcode sets. Join by sample-prefixed barcode and inspect `feature_type`.
+
+The original annotated CSV contains **137,604 nonempty, unique cell IDs**
+and **137,604 all-empty records**. The raw file is preserved unchanged;
+future preprocessing must explicitly discard all-empty records. Its unnamed
+first column contains IDs such as `rep1_AAACAGCCAACAGCCT-1`. Important fields
+are `replicate`, `Timepoint`, `perturbation` (guide sequence),
+`perturbation_name` (guide name), `target`, `new_CellType` and
+`annotation_simplified`. The target field has 19 TFs plus `NT`; do not infer
+the experimental control type from that aggregate label without checking
+guide-level annotations. There are 14 sample labels, not an established
+count of biological donors.
+
+| Timepoint | Annotated cells |
+| --- | ---: |
+| day 7 | 43,723 |
+| day 9 | 50,116 |
+| day 11 | 20,791 |
+| day 14 | 22,974 |
+
+These counts describe the deposited annotation, not a new QC selection.
+
 GEO's approximately 45.4 GB `GSE274113_RAW.tar` contains the 42 sample files.
 The script downloads those members directly from their official GSM URLs,
 avoiding duplicate TAR storage and extraction. The spreadsheet is retained
 as provenance; its external links are unnecessary because fragments are now
 available directly from GEO. Exact totals are recorded in the download plan.
+The 2026-09-14 plan contains 72 data files totaling 49,422,011,482 bytes
+(49.42 GB decimal), excluding the small provenance snapshots and receipts.
 
 ## Run
 
