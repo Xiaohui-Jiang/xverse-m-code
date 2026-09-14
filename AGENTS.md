@@ -14,7 +14,8 @@ language used to discuss the work.
 
 ## Project scope
 
-This repository is for separate work whose scope will be specified by the user.
+The current prototype fits latent diffusion to a frozen pretrained xVERSE RNA
+encoder/decoder. Further project scope will be specified by the user.
 The short summary under `xverse/` is background on the earlier xVERSE project;
 it does not prescribe this repository's architecture, experiments, or roadmap.
 The reference repository is `/Users/xiaohui/LocalFiles/Codes/xverse-code`

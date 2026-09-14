@@ -1,7 +1,8 @@
 # xVERSE-M
 
-Workspace for a new project. Its goals and implementation will be defined
-separately from the earlier xVERSE work.
+The first prototype trains latent diffusion on a frozen pretrained xVERSE RNA
+encoder/decoder. See [the implementation guide](latent_diffusion/README.md) for
+data loading, training, generation, and the bounded DCC pilot.
 
 - [Repository instructions](AGENTS.md)
 - [Brief summary of the earlier xVERSE work](xverse/xverse_technical_summary.md)
