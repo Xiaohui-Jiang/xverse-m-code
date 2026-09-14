@@ -63,6 +63,12 @@ mkdir -p /hpc/group/xielab/xj58/sbatch_output
 sbatch bashfiles/00_download_perturb_multiome.sh
 ```
 
+When biostat CPU nodes are occupied, use the authorized fallback:
+`sbatch -p common -A xielab bashfiles/00_download_perturb_multiome.sh`.
+
+Offline integrity checks:
+`python -m unittest discover -s data_preparation -p 'test_*.py'`.
+
 Direct execution on another machine:
 
 ```bash
