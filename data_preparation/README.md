@@ -137,6 +137,13 @@ Pretraining overlap for xVERSE and EpiAgent has not been audited by this downloa
 
 ## Upstream integrity issue discovered on 2026-09-14
 
+DCC acquisition job `55461528` ran on `common` / `xielab` for 12 minutes
+14 seconds. All 72 planned files reached their advertised byte counts;
+71 passed validation (including all 28 H5 matrices, metadata, and 13 of 14
+fragment files). The job intentionally exited with code 1 and the manifest
+has `status=failed` because the remaining fragment file is corrupt upstream.
+The other verified files are available for use. No QC or model fitting was run.
+
 `GSM8443612_rep2_atac_fragments.tsv.gz` has the exact GEO-advertised length
 (3,052,699,648 bytes), but full gzip validation fails with an unexpected EOF.
 An independent HTTP Range request reproduced the identical last 128 KiB.
