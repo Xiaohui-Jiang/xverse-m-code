@@ -164,3 +164,36 @@ block, or using the truncated data as a complete sample. A corrected source
 or reprocessing of the corresponding raw sequencing reads would be required
 for a fully validated rep2 fragment input. Other files continue downloading
 even when one file fails.
+
+## Python data preparation
+
+`02_prepare_perturb_multiome.py` ports the official loading and guide-assignment
+logic into Python. See [source attribution and exact scope](sources/perturb_multiome/README.md)
+for pinned notebook links, the retained BSD license and unported analysis steps.
+Requires Python 3.9+, numpy, scipy, pandas, h5py and anndata (DCC SpaRest has these).
+
+```bash
+# All 14 samples, deposited annotated cells, native per-sample ATAC peaks.
+sbatch bashfiles/02_prepare_perturb_multiome.sh
+
+# Small real-data smoke test; output must be a new directory.
+sbatch -p common -A xielab bashfiles/02_prepare_perturb_multiome.sh \
+  --samples 1 --limit-cells 256 \
+  --output /hpc/group/xielab/xj58/xverse-m-data/perturb_multiome_gse274113/processed/python_smoke
+```
+
+Default output is `processed/python_native/repN/{rna,atac,guides}.h5ad`, plus
+per-sample `qc.json` and a top-level completion `manifest.json`. All three
+modalities have identical cell IDs/order; `X` contains unnormalized counts.
+ATAC columns differ between samples. Use `anndata.read_h5ad(path)` to load.
+`obs` contains recomputed guide assignments and separate `published_*` columns.
+`--cell-selection intersection` retains all shared barcodes; `assigned` retains
+recognized guides; `published` (default) selects deposited annotated cell IDs.
+`--limit-cells` marks a smoke test and must be omitted for the full dataset.
+An existing output directory is refused to protect prior results; failed runs
+may leave partial sample files and have no completion manifest.
+
+The script processes one sample at a time, never densifies the expression or
+ATAC matrix, and does not read the truncated rep2 fragments. It does not recreate
+Signac common-peak counts, final ATAC QC or Mixscale scores. Rep11 and rep15 are
+excluded in upstream notebook 3a because of wetting failures.
