@@ -197,3 +197,15 @@ The script processes one sample at a time, never densifies the expression or
 ATAC matrix, and does not read the truncated rep2 fragments. It does not recreate
 Signac common-peak counts, final ATAC QC or Mixscale scores. Rep11 and rep15 are
 excluded in upstream notebook 3a because of wetting failures.
+
+### Validation recorded on 2026-09-15
+
+DCC CPU job `55502193` completed in 40 seconds with peak batch RSS about 2.93 GiB.
+All five acquisition/preparation regression tests passed. The real rep1 smoke
+run (`processed/python_smoke_ed09b06`) wrote 256 aligned cells per modality.
+Before limiting the output, the loader found 12,940 shared barcodes and all
+12,928 published rep1 cells. Recomputed guide sequences, guide names and target
+labels matched the published annotations exactly (zero disagreements across
+those 12,928 cells). This validates rep1 loading/assignment, not all samples or
+the unported fragment recount/Mixscale analyses. Local system Python lacked
+numpy; numerical tests were therefore executed in the DCC SpaRest environment.
